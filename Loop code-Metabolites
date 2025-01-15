@@ -17,6 +17,7 @@ EXP$id.exposure<-"Alcohol consumption"
 EXP$exposure<-"Alcohol consumption"
 head(EXP,6)
 
+#Extract strong SNP with calculate the F value of SNP
 EXP$R2<-EXP$beta.exposure*EXP$beta.exposure*2*(EXP$eaf.exposure)*(1-EXP$eaf.exposure)
 EXP$Fvalue<-(EXP$samplesize.exposure-2)*EXP$R2/(1-EXP$R2)
 EXP<- subset(EXP, Fvalue >= 10)
