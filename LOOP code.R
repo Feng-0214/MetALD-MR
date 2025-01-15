@@ -8,7 +8,7 @@ library(data.table)
 library(stringr)
 
 #Set the file path
-PATH<-'C:/Users/曹峰/Desktop/RWTH aachen university/MetALD/MR/alcohol12'
+PATH<-'local path'
 setwd(PATH)
 
 #Extract instrumental variables for alcohol consumption
@@ -29,6 +29,7 @@ gwas_ids <- gwas_data$V1  # The first column contains GWAS IDs
 gwas_names <- gwas_data$V2  # The second column contains GWAS names
 
 #Check for confounding factors
+#Extract the name of all SNP with confounding factors (BMI, smoking, liver disease and diabetes)
 data_BMI <- fread("BMI.tsv") # Confounding factor SNP file path_BMI
 data_BMI$rs_id <- sub("^(rs[0-9]+).*", "\\1", data_BMI$riskAllele)
 data_Smoking <- fread("Smoking.tsv")# Confounding factor SNP file path_Smoking
@@ -37,15 +38,17 @@ data_liver <- fread("liver.tsv")# Confounding factor SNP file path_liver
 data_liver$rs_id <- sub("^(rs[0-9]+).*", "\\1", data_liver$riskAllele)
 data_diabetes <- fread("diabetes.tsv")# Confounding factor SNP file path_diabetes
 data_diabetes$rs_id <- sub("^(rs[0-9]+).*", "\\1", data_diabetes$riskAllele)
+
 #Extract all SNP numbers starting with rs from the rs_id column of the matched_rows_BMI data frame and store them in a new data frame 
 snp_BMI <- data.frame(SNP = str_extract(data_BMI$rs_id, "rs\\d+"))
 snp_Smoking <- data.frame(SNP = str_extract(data_Smoking$rs_id, "rs\\d+"))
 snp_liver <- data.frame(SNP = str_extract(data_liver$rs_id, "rs\\d+"))
 snp_diabetes <- data.frame(SNP = str_extract(data_diabetes$rs_id, "rs\\d+"))
+
 # Merge four confounding SNP data frames
 all_snp <- bind_rows(snp_BMI, snp_Smoking, snp_liver, snp_diabetes)
 
-# Loop through each outcome
+# Loop through each outcome (metabolites)
 for (i in 1:length(gwas_ids)){
   # Loop through each outcome
   folder_name <- as.character(i)
@@ -70,9 +73,13 @@ for (i in 1:length(gwas_ids)){
   mr <- mr(data_h_SNP_mr)
   mr_OR <- generate_odds_ratios(mr)# Convert to odds ratios
   write.csv(mr_OR, file=paste0(folder_name, "/mr_OR.csv"))
-  H <- mr_heterogeneity(data_h_SNP_mr)# Conduct heterogeneity test
+
+  # Conduct heterogeneity test
+  H <- mr_heterogeneity(data_h_SNP_mr)
   write.csv(H, file=paste0(folder_name, "/H.csv"))
-  ple <- mr_pleiotropy_test(data_h_SNP_mr)# Conduct pleiotropy test
+
+  # Conduct pleiotropy test
+  ple <- mr_pleiotropy_test(data_h_SNP_mr)
   write.csv(ple, file=paste0(folder_name, "/ple.csv"))
   
   #Use MR-PRESSO to detect outliers and horizontal pleiotropy
@@ -171,53 +178,4 @@ for (i in 1:length(gwas_ids)){
   print(p3[[1]])
   dev.off()
 }
-
-
-#Organizing MR result data
-# Set the main folder path
-base_folder <- "C:/Users/曹峰/Desktop/RWTH aachen university/MetALD/MR/alcohol12/"
-# Automatically generate subfolder paths from 1 to 30
-folders <- paste0(base_folder, 1:30)
-# Define a function to read and merge presso.csv files from a single folder
-read_and_merge_A_csv <- function(folder_path) {
-  # Get paths of all files (mr_OR.csv, H.csv, ple.csv, presso.csv)in the folder
-  file_paths <- list.files(path = folder_path, pattern = "mr_OR.csv$", full.names = TRUE)# Modify the corresponding MR file names (mr_OR.csv, H.csv, ple.csv, presso.csv)
-  # Get paths of all presso.csv files in the folder
-  if (length(file_paths) == 0) {
-    return(NULL)
-  }
-  combined_data <- rbindlist(lapply(file_paths, fread))
-  return(combined_data)
-}
-# Read and merge csv files from all folders
-all_A_csv_data <- lapply(folders, read_and_merge_A_csv)
-# Remove NULL elements from the list
-all_A_csv_data <- Filter(Negate(is.null), all_A_csv_data)
-# Combine all csv data into one data frame
-combined_A_csv_data <- rbindlist(all_A_csv_data,fill=TRUE)
-# Save the combined data frame as a new CSV file and Modify the corresponding MR file names (mr_OR.csv, H.csv, ple.csv, presso.csv)
-write.csv(combined_A_csv_data, "mr_OR.csv", row.names = FALSE) 
-
-#Draw a forest plot
-library(forestplot)
-#Read forest plot data
-rs_forest <- read.csv('C:\\Users\\曹峰\\Desktop\\RWTH aachen university\\MetALD\\MR\\alcohol12\\forest1.csv', header = FALSE)
-# Data cleaning - remove non-numeric characters
-rs_forest[,2] <- as.numeric(gsub("[^0-9\\.\\-]", "", rs_forest[,2]))  
-rs_forest[,3] <- as.numeric(gsub("[^0-9\\.\\-]", "", rs_forest[,3]))
-rs_forest[,4] <- as.numeric(gsub("[^0-9\\.\\-]", "", rs_forest[,4]))
-#Create the forest plot
-forestplot(labeltext = as.matrix(rs_forest[,c(1,5,6,7)]),#Label text from columns 1, 5, and 6
-           mean = as.numeric(rs_forest[,2]),  # Mean effect size
-           lower = as.numeric(rs_forest[,3]),  # Lower bound of the confidence interval
-           upper = as.numeric(rs_forest[,4]),  # Upper bound of the confidence interval
-           zero = 1.0,  # Reference line at 1.0
-           boxsize = 0.4,  # Size of the box representing point estimates
-           lineheight = unit(6, 'mm'),  # Line height set to 6mm
-           colgap = unit(6, 'mm'),  # Column gap set to 4mm
-           lwd.zero = 2,  # Width of the reference line set to 2
-           lwd.ci = 2.5,  # Width of confidence interval lines set to 2.5
-           col=fpColors(box = "#7AC5CD", lines = 'black', zero = '#7AC5CD'),  # Color settings - box in blue, lines in black
-           xticks = c(0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0),  #  Set x-axis tick marks
-)
 
