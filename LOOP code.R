@@ -39,14 +39,8 @@ data_liver$rs_id <- sub("^(rs[0-9]+).*", "\\1", data_liver$riskAllele)
 data_diabetes <- fread("diabetes.tsv")# Confounding factor SNP file path_diabetes
 data_diabetes$rs_id <- sub("^(rs[0-9]+).*", "\\1", data_diabetes$riskAllele)
 
-#Extract all SNP numbers starting with rs from the rs_id column of the matched_rows_BMI data frame and store them in a new data frame 
-snp_BMI <- data.frame(SNP = str_extract(data_BMI$rs_id, "rs\\d+"))
-snp_Smoking <- data.frame(SNP = str_extract(data_Smoking$rs_id, "rs\\d+"))
-snp_liver <- data.frame(SNP = str_extract(data_liver$rs_id, "rs\\d+"))
-snp_diabetes <- data.frame(SNP = str_extract(data_diabetes$rs_id, "rs\\d+"))
-
 # Merge four confounding SNP data frames
-all_snp <- bind_rows(snp_BMI, snp_Smoking, snp_liver, snp_diabetes)
+all_snp1 <- bind_rows(data_BMI %>% select(rs_id), data_Smoking %>% select(rs_id), data_liver %>% select(rs_id), data_diabetes %>% select(rs_id))
 
 # Loop through each outcome (metabolites)
 for (i in 1:length(gwas_ids)){
