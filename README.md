@@ -14,7 +14,7 @@ Study Design
 ---
 Data on alcohol consumption and metabolites were obtained from two large-scale genome-wide association studies (GWAS), focusing on individuals of European ancestry. Alcohol consumption was defined based on the average weekly intake of alcohol. All data are accessible through the IEU OpenGWAS summary database.
 
-* The GWAS ID for alcohol consumption is `ieu-73-b`.<br>
+* The GWAS ID for alcohol consumption is `ieu-b-73`.<br>
 * GWAS IDs for metabolites can be found in the `gwas_ids.csv` file within the "`Data`" folder.
 
 Below is the flowchart illustrating the study design.
